@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora IA - Formulario</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    #resultCard {
+      display: none;
+    }
+    #resultCard .card-body {
+      word-wrap: break-word;
+    }
+    .badge-success { background-color: #28a745; }
+    .badge-fail { background-color: #dc3545; }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="card mx-auto" style="max-width:720px;">
+      <div class="card-body">
+        <h4 class="card-title mb-3">Captura de expresión matemática</h4>
+        <form id="calcForm">
+          <div class="mb-3">
+            <label for="studentText" class="form-label">Texto (tu nombre o comentario)</label>
+            <input type="text" class="form-control" id="studentText" required>
+          </div>
+          <div class="mb-3">
+            <label for="expression" class="form-label">Expresión matemática</label>
+            <input type="text" class="form-control" id="expression" placeholder="Ej: 2*(3+7)/5" required>
+            <div class="form-text">Usa operadores + - * / y paréntesis.</div>
+          </div>
+          <button type="submit" class="btn btn-primary">Enviar</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="resultCard" class="card mx-auto mt-4" style="max-width:720px;">
+      <div class="card-body">
+        <h5 class="card-title">Resultados</h5>
+        <p><strong>Texto ingresado:</strong> <span id="resText"></span></p>
+        <p><strong>Expresión:</strong> <span id="resExpr"></span></p>
+        <p><strong>Resultado:</strong> <span id="resResult"></span></p>
+        <p><strong>Guardado en la base de datos:</strong> <span id="resStored" class="badge"></span></p>
+        <p><strong>Fecha / Hora:</strong> <span id="resTimestamp"></span></p>
+      </div>
+    </div>
+  </div>
+
+<script>
+const WEBHOOK_URL = "http://localhost:5678/webhook/2b55c62b-26e9-4832-a1cc-36e482073122"; // URL de tu Webhook
+
+document.getElementById('calcForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const text = document.getElementById('studentText').value.trim();
+  const expr = document.getElementById('expression').value.trim();
+  if(!expr) return;
+
+  const payload = { 
+    studentText: text, 
+    expression: expr, 
+    timestamp: new Date().toISOString() 
+  };
+
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+      mode: 'cors'
+    });
+
+    const data = await res.json();
+
+    // Mostrar los resultados en la tarjeta
+    document.getElementById('resText').innerText = text;
+    document.getElementById('resExpr').innerText = expr;
+    document.getElementById('resResult').innerText = data.result ?? 'N/A';
+    document.getElementById('resStored').innerText = data.stored ? 'Sí' : 'No';
+    document.getElementById('resStored').className = 'badge ' + (data.stored ? 'badge-success' : 'badge-fail');
+    document.getElementById('resTimestamp').innerText = new Date().toLocaleString();
+
+    document.getElementById('resultCard').style.display = 'block';
+
+  } catch(err) {
+    alert("Error enviando los datos: " + err.message);
+  }
+});
+</script>
+</body>
+</html>
